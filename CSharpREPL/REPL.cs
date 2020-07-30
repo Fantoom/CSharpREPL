@@ -133,7 +133,7 @@ namespace CSharpREPL
             string code;
             if (File.Exists(s))
             {
-                code = File.ReadAllText(s);
+                code = await File.ReadAllTextAsync(s);
             }
             else
             {
