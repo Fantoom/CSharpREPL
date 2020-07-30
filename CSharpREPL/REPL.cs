@@ -46,7 +46,7 @@ namespace CSharpREPL
             return stringBuilder.ToString();
         }
 
-        public REPL(List<string> imports, List<string> references) : this()
+        public REPL(List<string> imports) : this()
         {
             this.options = this.options.AddImports(imports);
             this.options = this.options.AddReferences(imports);
