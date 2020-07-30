@@ -13,21 +13,22 @@ namespace CSharpREPL
     internal class REPL
     {
         private ScriptState state;
-        private ScriptOptions options = ScriptOptions.Default;
-        private readonly Dictionary<string, Action<string>> Commands;
+        private ScriptOptions options;
+        private readonly Dictionary<string, Action<string>> commands;
 
 
-        public static ScriptOptions DefaultScriptOptions { get; } = ScriptOptions.Default.AddImports("System", "System.IO", "System.Collections.Generic",
-            "System.Console", "System.Diagnostics", "System.Dynamic",
-            "System.Linq", "System.Linq.Expressions", "System.Text",
-            "System.Threading.Tasks")
+        private static ScriptOptions DefaultScriptOptions { get; } = ScriptOptions.Default
+            .AddImports("System", "System.IO", "System.Collections.Generic",
+                "System.Console", "System.Diagnostics", "System.Dynamic",
+                "System.Linq", "System.Linq.Expressions", "System.Text",
+                "System.Threading.Tasks")
             .AddReferences("System", "System.Core", "Microsoft.CSharp");
 
         public REPL()
         {
-            options = DefaultScriptOptions;
+            this.options = DefaultScriptOptions;
             ReadLine.AutoCompletionHandler = new AutoCompletion();
-            Commands = new Dictionary<string, Action<string>>()
+            this.commands = new Dictionary<string, Action<string>>()
             {
                 { "#help", (s) => ShowHelp()},
                 { "#n", (s) => AddNamespace(s.Replace("#n","").Replace(";","").Replace(" ",""))},
@@ -38,8 +39,8 @@ namespace CSharpREPL
 
         public REPL(List<string> imports, List<string> references) : this()
         {
-            options = options.AddImports(imports);
-            options = options.AddReferences(imports);
+            this.options = this.options.AddImports(imports);
+            this.options = this.options.AddReferences(imports);
         }
 
         public REPL(ScriptOptions options) : this()
@@ -50,7 +51,7 @@ namespace CSharpREPL
 
         public async Task Start()
         {
-            state = await CSharpScript.RunAsync("", options);
+            this.state = await CSharpScript.RunAsync("", this.options);
             Console.WriteLine("Enter #help to show help");
             while (true)
             {
@@ -68,7 +69,7 @@ namespace CSharpREPL
                         }
                         input = stringBuilder.ToString();
                     }
-                    var cmd = Commands.Where(x => input.Contains(x.Key));
+                    var cmd = this.commands.Where(x => input.Contains(x.Key));
                     if (cmd.Count() > 0)
                     {
                         cmd.First().Value(input);
@@ -88,10 +89,10 @@ namespace CSharpREPL
 
         private async Task EvalAsync(string code)
         {
-            state = await state.ContinueWithAsync(code, options);
-            if (state.ReturnValue != null && !(bool)state.ReturnValue?.Equals(""))
+            this.state = await this.state.ContinueWithAsync(code, this.options);
+            if (this.state.ReturnValue != null && !(bool)this.state.ReturnValue?.Equals(""))
             {
-                Console.WriteLine(state.ReturnValue);
+                Console.WriteLine(this.state.ReturnValue);
             }
         }
 
@@ -111,12 +112,12 @@ namespace CSharpREPL
             {
                 MetadataReference.CreateFromFile(s);
             }
-            options = options.AddReferences(s);
+            this.options = this.options.AddReferences(s);
         }
 
         private void AddNamespace(string s)
         {
-            options = options.AddImports(s);
+            this.options = this.options.AddImports(s);
         }
         private async void LoadScript(string s)
         {
