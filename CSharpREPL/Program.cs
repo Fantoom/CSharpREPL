@@ -1,11 +1,9 @@
-﻿namespace CSharpREPL
+﻿using System.Threading.Tasks;
+
+namespace CSharpREPL
 {
-    internal class Program
+    internal static class Program
     {
-        private static void Main()
-        {
-            var repl = new REPL();
-            repl.Start();
-        }
+        private static async Task Main() => await new REPL().Start();
     }
 }
