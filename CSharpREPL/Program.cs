@@ -1,13 +1,11 @@
-﻿using System;
-
-namespace CSharpREPL
+﻿namespace CSharpREPL
 {
-	class Program
-	{
-		static void Main(string[] args)
-		{
-			var repl = new REPL();
-			repl.Start();
-		}
-	}
+    internal class Program
+    {
+        private static void Main()
+        {
+            var repl = new REPL();
+            repl.Start();
+        }
+    }
 }
