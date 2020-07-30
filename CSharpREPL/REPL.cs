@@ -66,7 +66,7 @@ namespace CSharpREPL
             {
                 try
                 {
-                    StringBuilder stringBuilder = new StringBuilder();
+                    var stringBuilder = new StringBuilder();
                     string input = ReadLine.Read("> ");
                     if (!input.EndsWith(";"))
                     {
@@ -79,7 +79,7 @@ namespace CSharpREPL
                         input = stringBuilder.ToString();
                     }
                     var cmd = this.commands.Where(x => input.Contains(x.Key));
-                    if (cmd.Count() > 0)
+                    if (cmd.Any())
                     {
                         cmd.First().Value(input);
                     }
