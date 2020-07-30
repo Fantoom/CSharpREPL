@@ -36,7 +36,6 @@ namespace CSharpREPL
                 { "#load", s => LoadScript(RemoveCommandWithDelimiters(s, "#load"))},
             };
         }
-
         private string RemoveCommandWithDelimiters(string originString, string command)
         {
             var stringBuilder = new StringBuilder(originString);
@@ -51,7 +50,6 @@ namespace CSharpREPL
             this.options = this.options.AddImports(imports);
             this.options = this.options.AddReferences(imports);
         }
-
         public REPL(ScriptOptions options) : this()
         {
             this.options = this.options.AddImports(options.Imports);
@@ -68,17 +66,19 @@ namespace CSharpREPL
                 {
                     var stringBuilder = new StringBuilder();
                     string input = ReadLine.Read("> ");
-                    if (!input.EndsWith(";"))
+                    if (!input.EndsWith(';'))
                     {
                         stringBuilder.Append(input);
-                        while ((!stringBuilder.ToString().EndsWith(";") && !stringBuilder.ToString().EndsWith('}')) || (stringBuilder.ToString().Count(c => c == '{') != stringBuilder.ToString().Count(c => c == '}') && stringBuilder.ToString().Count(c => c == '{') > 0))
+                        string newInput = stringBuilder.ToString();
+                        while (IsUncompletedStatement(newInput) || IsUncompletedCodeBlock(newInput))
                         {
                             input = ReadLine.Read(". ");
                             stringBuilder.Append(input);
                         }
                         input = stringBuilder.ToString();
                     }
-                    var cmd = this.commands.Where(x => input.Contains(x.Key));
+                    var cmd = this.commands
+                        .Where(x => input.Contains(x.Key));
                     if (cmd.Any())
                     {
                         cmd.First().Value(input);
@@ -96,10 +96,20 @@ namespace CSharpREPL
             }
         }
 
+        private bool IsUncompletedStatement(string input)
+        {
+            return !input.EndsWith(';') && !input.EndsWith('}');
+        }
+        private bool IsUncompletedCodeBlock(string input)
+        {
+            return input.Count(c => c == '{') != input.Count(c => c == '}')
+                   && input.Count(c => c == '{') > 0;
+        }
+
         private async Task EvalAsync(string code)
         {
             this.state = await this.state.ContinueWithAsync(code, this.options);
-            if (this.state.ReturnValue != null && !(bool)this.state.ReturnValue?.Equals(""))
+            if (string.IsNullOrEmpty(this.state.ReturnValue as string))
             {
                 Console.WriteLine(this.state.ReturnValue);
             }
