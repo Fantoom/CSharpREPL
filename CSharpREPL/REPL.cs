@@ -28,13 +28,22 @@ namespace CSharpREPL
         {
             this.options = DefaultScriptOptions;
             ReadLine.AutoCompletionHandler = new AutoCompletion();
-            this.commands = new Dictionary<string, Action<string>>()
+            this.commands = new Dictionary<string, Action<string>>
             {
-                { "#help", (s) => ShowHelp()},
-                { "#n", (s) => AddNamespace(s.Replace("#n","").Replace(";","").Replace(" ",""))},
-                { "#r", (s) => AddReference(s.Replace("#r","").Replace(";","").Replace(" ",""))},
-                { "#load", (s) => LoadScript(s.Replace("#load","").Replace(";","").Replace(" ",""))},
+                { "#help", _ => ShowHelp()},
+                { "#n", s => AddNamespace(RemoveCommandWithDelimiters(s, "#n"))},
+                { "#r", s => AddReference(RemoveCommandWithDelimiters(s, "#r"))},
+                { "#load", s => LoadScript(RemoveCommandWithDelimiters(s, "#load"))},
             };
+        }
+
+        private string RemoveCommandWithDelimiters(string originString, string command)
+        {
+            var stringBuilder = new StringBuilder(originString);
+            stringBuilder.Replace(command, string.Empty);
+            stringBuilder.Replace(";", string.Empty);
+            stringBuilder.Replace(" ", string.Empty);
+            return stringBuilder.ToString();
         }
 
         public REPL(List<string> imports, List<string> references) : this()
