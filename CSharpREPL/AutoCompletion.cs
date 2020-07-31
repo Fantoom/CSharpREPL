@@ -19,7 +19,7 @@ namespace CSharpREPL
             string end = text.Split(".").Last();
             int i = text.LastIndexOf('.') - 1;
             string input = text.Remove(text.LastIndexOf('.')).Trim();
-            while (!this.openBrackets.Contains(text[i]) && i > 0)
+            while (char.IsLetterOrDigit(text[i]) && i > 0)
             {
                 i--;
             }
@@ -33,7 +33,6 @@ namespace CSharpREPL
                 .Select(x => x.Name)
                 .Where(x => x.Contains(end))
                 .ToArray();
-
         }
 
         private static Type GetType(string typeName)
@@ -42,7 +41,7 @@ namespace CSharpREPL
             return type ?? (AppDomain.CurrentDomain
                     .GetAssemblies()
                     .FirstOrDefault(x => x.GetTypes()
-                        .Any(t => t.Name == typeName))
+                    .Any(t => t.Name == typeName))
                     ?.GetTypes()
                     .FirstOrDefault(t => t.Name == typeName));
         }
@@ -52,7 +51,7 @@ namespace CSharpREPL
             return type ?? (AppDomain.CurrentDomain
                 .GetAssemblies()
                 .FirstOrDefault(x => x.GetTypes()
-                    .Any(t => t.Name.Contains(typeName)))
+                .Any(t => t.Name.Contains(typeName)))
                 ?.GetTypes()
                 .FirstOrDefault(t => t.Name == typeName));
         }

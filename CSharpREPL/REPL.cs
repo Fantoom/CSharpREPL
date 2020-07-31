@@ -16,7 +16,6 @@ namespace CSharpREPL
         private ScriptOptions options;
         private readonly Dictionary<string, Action<string>> commands;
 
-
         private static ScriptOptions DefaultScriptOptions { get; } = ScriptOptions.Default
             .AddImports("System", "System.IO", "System.Collections.Generic",
                 "System.Console", "System.Diagnostics", "System.Dynamic",
@@ -26,9 +25,9 @@ namespace CSharpREPL
 
         public REPL()
         {
-            this.options = DefaultScriptOptions;
+            options = DefaultScriptOptions;
             ReadLine.AutoCompletionHandler = new AutoCompletion();
-            this.commands = new Dictionary<string, Action<string>>
+            commands = new Dictionary<string, Action<string>>
             {
                 { "#help", _ => ShowHelp()},
                 { "#n", s => AddNamespace(RemoveCommandWithDelimiters(s, "#n"))},
@@ -47,18 +46,18 @@ namespace CSharpREPL
 
         public REPL(List<string> imports) : this()
         {
-            this.options = this.options.AddImports(imports);
-            this.options = this.options.AddReferences(imports);
+            options = options.AddImports(imports);
+            options = options.AddReferences(imports);
         }
         public REPL(ScriptOptions options) : this()
         {
-            this.options = this.options.AddImports(options.Imports);
-            this.options = this.options.AddReferences(options.MetadataReferences);
+            this.options = options.AddImports(options.Imports);
+            this.options = options.AddReferences(options.MetadataReferences);
         }
 
         public async Task Start()
         {
-            this.state = await CSharpScript.RunAsync("", this.options);
+            state = await CSharpScript.RunAsync("", options);
             Console.WriteLine("Enter #help to show help");
             while (true)
             {
@@ -69,15 +68,14 @@ namespace CSharpREPL
                     if (!input.EndsWith(';'))
                     {
                         stringBuilder.Append(input);
-                        string newInput = stringBuilder.ToString();
-                        while (IsUncompletedStatement(newInput) || IsUncompletedCodeBlock(newInput))
+                        while ((!stringBuilder.ToString().EndsWith(";") && !stringBuilder.ToString().EndsWith('}')) || (stringBuilder.ToString().Count(c => c == '{') != stringBuilder.ToString().Count(c => c == '}') && stringBuilder.ToString().Count(c => c == '{') > 0))
                         {
                             input = ReadLine.Read(". ");
                             stringBuilder.Append(input);
                         }
                         input = stringBuilder.ToString();
                     }
-                    var cmd = this.commands
+                    var cmd = commands
                         .Where(x => input.Contains(x.Key));
                     if (cmd.Any())
                     {
@@ -96,22 +94,12 @@ namespace CSharpREPL
             }
         }
 
-        private bool IsUncompletedStatement(string input)
-        {
-            return !input.EndsWith(';') && !input.EndsWith('}');
-        }
-        private bool IsUncompletedCodeBlock(string input)
-        {
-            return input.Count(c => c == '{') != input.Count(c => c == '}')
-                   && input.Count(c => c == '{') > 0;
-        }
-
         private async Task EvalAsync(string code)
         {
-            this.state = await this.state.ContinueWithAsync(code, this.options);
-            if (string.IsNullOrEmpty(this.state.ReturnValue as string))
+            state = await state.ContinueWithAsync(code, options);
+            if (string.IsNullOrEmpty(state.ReturnValue as string))
             {
-                Console.WriteLine(this.state.ReturnValue);
+                Console.WriteLine(state.ReturnValue);
             }
         }
 
@@ -131,12 +119,12 @@ namespace CSharpREPL
             {
                 MetadataReference.CreateFromFile(s);
             }
-            this.options = this.options.AddReferences(s);
+            options = options.AddReferences(s);
         }
 
         private void AddNamespace(string s)
         {
-            this.options = this.options.AddImports(s);
+            options = options.AddImports(s);
         }
         private async void LoadScript(string s)
         {
