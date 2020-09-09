@@ -1,6 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
+using NuGet.Common;
+using NugetWorker;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -33,8 +35,12 @@ namespace CSharpREPL
                 { "#n", s => AddNamespace(RemoveCommandWithDelimiters(s, "#n"))},
                 { "#r", s => AddReference(RemoveCommandWithDelimiters(s, "#r"))},
                 { "#load", s => LoadScript(RemoveCommandWithDelimiters(s, "#load"))},
+                { "#nuget", s => AddNugetPackage(RemoveCommandWithDelimiters(s, "#nuget"))},
             };
         }
+
+
+
         private string RemoveCommandWithDelimiters(string originString, string command)
         {
             var stringBuilder = new StringBuilder(originString);
@@ -57,6 +63,7 @@ namespace CSharpREPL
 
         public async Task Start()
         {
+            NugetHelper.Instance.logger = new NullLogger();
             state = await CSharpScript.RunAsync("", options);
             Console.WriteLine("Enter #help to show help");
             while (true)
@@ -65,7 +72,7 @@ namespace CSharpREPL
                 {
                     var stringBuilder = new StringBuilder();
                     string input = ReadLine.Read("> ");
-                    if (!input.EndsWith(';'))
+                    if (!input.EndsWith(';') && !input.StartsWith("#"))
                     {
                         stringBuilder.Append(input);
                         while ((!stringBuilder.ToString().EndsWith(";") && !stringBuilder.ToString().EndsWith('}')) || (stringBuilder.ToString().Count(c => c == '{') != stringBuilder.ToString().Count(c => c == '}') && stringBuilder.ToString().Count(c => c == '{') > 0))
@@ -75,8 +82,7 @@ namespace CSharpREPL
                         }
                         input = stringBuilder.ToString();
                     }
-                    var cmd = commands
-                        .Where(x => input.Contains(x.Key));
+                    var cmd = commands.Where(x => x.Key == input.Split(" ")?[0]);
                     if (cmd.Any())
                     {
                         cmd.First().Value(input);
@@ -109,7 +115,8 @@ namespace CSharpREPL
             (
                 "\"#n <namespace name>\" to add namespace \n" +
                 "\"#r <Path to assembly>\" or \"#r <assembly name>\" to add reference to an assembly \n" +
-                "\"#load <Path to script>\" to load c# script \n"
+                "\"#load <Path to script>\" to load c# script \n" +
+                "\"#nuget <Package Name> <Package Version>\" to download nuget package\n"
             );
         }
 
@@ -140,5 +147,26 @@ namespace CSharpREPL
 
             await EvalAsync(code);
         }
+        private async void AddNugetPackage(string s)
+        {
+            var args = s.Split(" ");
+            string packageName = args[0];
+            string version = args.Length > 1 ? args[1] : "";
+            string downloadDir = Path.GetFullPath(NugetHelper.Instance.GetNugetSettings().NugetFolder);
+            if (!Directory.Exists(downloadDir))
+                Directory.CreateDirectory(downloadDir);
+            if (Directory.GetDirectories(downloadDir, packageName + ".*").Length < 1)
+            {
+                NugetEngine nugetEngine = new NugetEngine();
+                Console.WriteLine($"Downloading nuget package {packageName} {version}...");
+                await nugetEngine.GetPackage(packageName, version);
+                Console.WriteLine($"{packageName} {version} is downloaded to {downloadDir}");
+            }
+            else 
+            {
+                Console.WriteLine($"Package is already exists in {downloadDir}");
+            }
+        }
     }
 }
+
