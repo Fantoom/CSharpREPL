@@ -133,19 +133,30 @@ namespace CSharpREPL
         {
             options = options.AddImports(s);
         }
-        private async void LoadScript(string s)
+        private async void LoadScript(string path)
         {
-            string code;
-            if (File.Exists(s))
+            string[] data;
+            try
             {
-                code = await File.ReadAllTextAsync(s);
-            }
-            else
-            {
-                throw new FileNotFoundException("File not found");
-            }
+                if (File.Exists(path))
+                {
+                    data = await File.ReadAllLinesAsync(path);
+                }
+                else
+                {
+                    throw new FileNotFoundException("File not found");
+                }
+                var groupedData = data.GroupBy(x => commands.ContainsKey(x.Split(" ")?[0]) ? "cmd" : "code").ToDictionary(g => g.Key, g => g.ToList());
 
-            await EvalAsync(code);
+                foreach (var cmd in groupedData["cmd"])
+                    commands[cmd.Split(" ").First()](cmd.Split(" ").TakeLast(1).First());
+                await EvalAsync(string.Join("", groupedData["code"]));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine();
+                Console.WriteLine(e.Message);
+            }
         }
         private async void AddNugetPackage(string s)
         {
