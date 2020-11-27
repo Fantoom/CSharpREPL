@@ -147,9 +147,12 @@ namespace CSharpREPL
                     throw new FileNotFoundException("File not found");
                 }
                 var groupedData = data.GroupBy(x => commands.ContainsKey(x.Split(" ")?[0]) ? "cmd" : "code").ToDictionary(g => g.Key, g => g.ToList());
-
-                foreach (var cmd in groupedData["cmd"])
-                    commands[cmd.Split(" ").First()](cmd.Split(" ").TakeLast(1).First());
+                if (groupedData.ContainsKey("cmd"))
+                {
+                    foreach (var cmd in groupedData["cmd"])
+                        commands[cmd.Split(" ").First()](cmd.Split(" ").TakeLast(1).First());
+                }
+                if(groupedData.ContainsKey("code"))
                 await EvalAsync(string.Join("", groupedData["code"]));
             }
             catch (Exception e)
